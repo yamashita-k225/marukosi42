@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="42コース">
+<title>マルコシ 42コース</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, 'Hiragino Sans', sans-serif; background: #F2F2F7; color: #1C1C1E; }
+
+.header { background: #fff; padding: 14px 16px 10px; border-bottom: 0.5px solid #C6C6C8; position: sticky; top: 0; z-index: 100; }
+.header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.header-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+.header-sub { font-size: 12px; color: #6C6C70; margin-top: 1px; }
+.progress-meta { display: flex; justify-content: space-between; font-size: 12px; color: #6C6C70; margin-bottom: 5px; }
+.progress-track { background: #E5E5EA; border-radius: 4px; height: 5px; }
+.progress-fill { background: #34C759; height: 5px; border-radius: 4px; transition: width 0.4s ease; }
+
+.tab-bar { display: flex; background: #fff; border-bottom: 0.5px solid #C6C6C8; overflow-x: auto; }
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab { flex-shrink: 0; padding: 10px 14px; font-size: 13px; font-weight: 500; color: #6C6C70; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tab.active { color: #007AFF; border-bottom-color: #007AFF; }
+
+.content { padding: 12px; }
+section { display: none; }
+section.active { display: block; }
+
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.stat-box { background: #fff; border-radius: 10px; padding: 10px 12px; }
+.stat-label { font-size: 10px; color: #6C6C70; margin-bottom: 2px; }
+.stat-val { font-size: 20px; font-weight: 700; }
+.stat-val.green { color: #34C759; }
+.stat-val.orange { color: #FF9500; }
+.stat-val.blue { color: #007AFF; }
+
+.card { background: #fff; border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+.card-header { padding: 11px 13px; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.stop-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.stop-num.done { background: #D1FAE5; color: #065F46; }
+.stop-num.current { background: #007AFF; color: #fff; }
+.stop-num.pending { background: #E5E5EA; color: #8E8E93; }
+.card-body { flex: 1; min-width: 0; }
+.card-name { font-size: 15px; font-weight: 600; }
+.card-addr { font-size: 11px; color: #6C6C70; margin-top: 2px; }
+.badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; }
+.badge-done { background: #D1FAE5; color: #065F46; }
+.badge-warn { background: #FFF3CD; color: #7D4E00; }
+.badge-info { background: #DBEAFE; color: #1E40AF; }
+.badge-red { background: #FEE2E2; color: #991B1B; }
+.badge-purple { background: #EDE9FE; color: #5B21B6; }
+.badge-gray { background: #F3F4F6; color: #374151; }
+
+.card-detail { border-top: 0.5px solid #E5E5EA; padding: 10px 13px; display: none; }
+.card-detail.open { display: block; }
+.detail-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 5px 0; border-bottom: 0.5px solid #F5F5F5; font-size: 12px; gap: 8px; }
+.detail-row:last-of-type { border-bottom: none; }
+.detail-key { color: #6C6C70; flex-shrink: 0; }
+.detail-val { font-weight: 500; text-align: right; }
+.notice-box { background: #FFFBEB; border-left: 3px solid #F59E0B; border-radius: 0 8px 8px 0; padding: 8px 10px; font-size: 12px; color: #78350F; margin: 8px 0; line-height: 1.6; }
+.notice-box.red { background: #FEF2F2; border-left-color: #EF4444; color: #7F1D1D; }
+.btn-row { display: flex; gap: 8px; margin-top: 10px; }
+.btn { flex: 1; padding: 9px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; text-align: center; }
+.btn-map { background: #EFF6FF; color: #1D4ED8; }
+.btn-done { background: #34C759; color: #fff; }
+.btn-map:active { background: #DBEAFE; }
+.btn-done:active { background: #28A745; }
+
+/* ルートタブ */
+.route-section { background: #fff; border-radius: 12px; margin-bottom: 10px; padding: 14px; }
+.route-section-title { font-size: 13px; font-weight: 700; color: #6C6C70; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 0.5px solid #E5E5EA; }
+.route-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 3px; }
+.route-dot-col { display: flex; flex-direction: column; align-items: center; }
+.rdot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.rdot.done { background: #34C759; }
+.rdot.current { background: #007AFF; box-shadow: 0 0 0 3px rgba(0,122,255,0.2); }
+.rdot.pending { background: #C7C7CC; }
+.rline { width: 2px; height: 16px; background: #E5E5EA; margin: 2px 0; }
+.rtext { font-size: 13px; font-weight: 500; padding-top: 1px; }
+.rsub { font-size: 11px; color: #6C6C70; }
+.rcurrent { color: #007AFF; font-weight: 700; }
+
+/* 注意事項タブ */
+.note-card { background: #fff; border-radius: 12px; margin-bottom: 10px; padding: 13px; }
+.note-header { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.note-icon { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.ni-warn { background: #FFF3CD; color: #7D4E00; }
+.ni-info { background: #DBEAFE; color: #1E40AF; }
+.ni-red { background: #FEE2E2; color: #991B1B; }
+.ni-green { background: #D1FAE5; color: #065F46; }
+.note-title { font-size: 14px; font-weight: 700; }
+.note-body { font-size: 12px; color: #3C3C43; line-height: 1.7; }
+.note-body b { font-weight: 700; color: #1C1C1E; }
+
+/* 回収タブ */
+.collect-card { background: #fff; border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+.collect-header { padding: 11px 13px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.cnum { width: 26px; height: 26px; border-radius: 50%; background: #EDE9FE; color: #5B21B6; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.cnum.done { background: #D1FAE5; color: #065F46; }
+.collect-body { flex: 1; }
+.collect-name { font-size: 14px; font-weight: 600; }
+.collect-sub { font-size: 11px; color: #6C6C70; margin-top: 2px; }
+.collect-detail { border-top: 0.5px solid #E5E5EA; padding: 10px 13px; display: none; }
+.collect-detail.open { display: block; }
+.collect-btn-row { display: flex; gap: 8px; margin-top: 8px; }
+.btn-collect { flex: 1; padding: 9px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: #EDE9FE; color: #5B21B6; }
+.btn-collect.done-btn { background: #34C759; color: #fff; }
+.btn-collect:active { opacity: 0.8; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-title">42コース</div>
+      <div class="header-sub" id="today-date"></div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:13px;font-weight:600">マルコシ</div>
+      <div style="font-size:11px;color:#6C6C70">作業マニュアル</div>
+    </div>
+  </div>
+  <div>
+    <div class="progress-meta">
+      <span>納品進捗</span>
+      <span id="prog-text">0 / 13 件完了</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab('stops')">納品先</div>
+  <div class="tab" onclick="switchTab('route')">ルート</div>
+  <div class="tab" onclick="switchTab('collect')">回収</div>
+  <div class="tab" onclick="switchTab('notes')">注意事項</div>
+  <div class="tab" onclick="switchTab('done')">納品完了</div>
+  <div class="tab" onclick="switchTab('collected')">回収完了</div>
+</div>
+
+<div class="content">
+
+<!-- 納品先タブ -->
+<section id="tab-stops" class="active">
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-label">残り件数</div><div class="stat-val orange" id="remaining">13</div></div>
+    <div class="stat-box"><div class="stat-label">回収あり</div><div class="stat-val purple" style="color:#7C3AED">7</div></div>
+    <div class="stat-box"><div class="stat-label">要検品</div><div class="stat-val blue">3</div></div>
+  </div>
+
+  <!-- 1. ノイズ研究所 -->
+  <div class="card" id="stop-1">
+    <div class="card-header" onclick="toggleDetail('d1')">
+      <div class="stop-num current" id="sn-1">1</div>
+      <div class="card-body">
+        <div class="card-name">（株）ノイズ研究所</div>
+        <div class="card-addr">相模原市中央区千代田1丁目4−4</div>
+        <div class="badges">
+          <span class="badge badge-warn">2F長机</span>
+          <span class="badge badge-gray">味噌汁・箸・お椀</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail open" id="d1">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0427122011" style="color:#007AFF;text-decoration:none;font-weight:500">042-712-2011</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">2F 長机</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">味噌汁・箸・お椀</span></div>
+      <div class="detail-row"><span class="detail-key">タッパー</span><span class="detail-val">ノイズ用タッパー使用</span></div>
+      <div class="notice-box">箸とみそ汁をビニール袋に入れる。お椀のタッパーは他社分と間違えないよう注意！</div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県相模原市中央区千代田1丁目4-4')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(1)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 井上シート商会 -->
+  <div class="card" id="stop-2">
+    <div class="card-header" onclick="toggleDetail('d2')">
+      <div class="stop-num pending" id="sn-2">2</div>
+      <div class="card-body">
+        <div class="card-name">（株）井上シート商会</div>
+        <div class="card-addr">相模原市中央区相生1丁目10−1</div>
+        <div class="badges">
+          <span class="badge badge-warn">2F・声掛け要</span>
+          <span class="badge badge-red">前日分回収</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d2">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0427587823" style="color:#007AFF;text-decoration:none;font-weight:500">042-758-7823</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">2F キッチン下（左側）</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">箸・味噌汁</span></div>
+      <div class="detail-row"><span class="detail-key">容器</span><span class="detail-val">発泡に入れて納品</span></div>
+      <div class="notice-box">2階に上がって声掛けしてから部屋内左のキッチンの下に置く。<b>前日分も回収すること。</b></div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県相模原市中央区相生1丁目10-1')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(2)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 王鈴物産 -->
+  <div class="card" id="stop-3">
+    <div class="card-header" onclick="toggleDetail('d3')">
+      <div class="stop-num pending" id="sn-3">3</div>
+      <div class="card-body">
+        <div class="card-name">（株）王鈴物産</div>
+        <div class="card-addr">相模原市中央区東淵野辺5丁目2−7</div>
+        <div class="badges">
+          <span class="badge badge-warn">ドア入って左の棚</span>
+          <span class="badge badge-red">前日分回収</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d3">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0427303345" style="color:#007AFF;text-decoration:none;font-weight:500">042-730-3345</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">ドア開けて左の棚の上</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">箸</span></div>
+      <div class="notice-box"><b>前日分回収あり。</b></div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県相模原市中央区東淵野辺5丁目2-7')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(3)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 福山通運 -->
+  <div class="card" id="stop-4">
+    <div class="card-header" onclick="toggleDetail('d4')">
+      <div class="stop-num pending" id="sn-4">4</div>
+      <div class="card-body">
+        <div class="card-name">福山通運</div>
+        <div class="card-addr">相模原市南区大野台2丁目32−1</div>
+        <div class="badges">
+          <span class="badge badge-warn">EV2F・厨房</span>
+          <span class="badge badge-red">回収14:20〜</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d4">
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">EV2F→左ドア（厨房前室）→厨房</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">寸胴</span></div>
+      <div class="detail-row"><span class="detail-key">運搬</span><span class="detail-val">キャリー使用</span></div>
+      <div class="notice-box red">通常のお弁当は納品せず、<b>福山通運用のものだけ</b>使う。<br>⚠ 回収はお金が出るのが<b>14:20頃から</b>。資材の回収は時間前でもOK。</div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県相模原市南区大野台2丁目32-1')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(4)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 杏友会 -->
+  <div class="card" id="stop-5">
+    <div class="card-header" onclick="toggleDetail('d5')">
+      <div class="stop-num pending" id="sn-5">5</div>
+      <div class="card-body">
+        <div class="card-name">（株）杏友会</div>
+        <div class="card-addr">相模原市南区上鶴間本町4丁目52−6</div>
+        <div class="badges">
+          <span class="badge badge-warn">1F検品→4F食堂</span>
+          <span class="badge badge-info">保温機ON</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d5">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0427403200" style="color:#007AFF;text-decoration:none;font-weight:500">042-740-3200</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">1F事務所で検品→4F食堂</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">なし</span></div>
+      <div class="notice-box">1階事務所で<b>本日の納品数を声掛け</b>してから4階食堂へ。<br>ご飯は<b>保温機のスイッチをON</b>にしてからご飯を入れる。<br>テーブルにおかずを置き、空の番重はテーブル下に置く。</div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県相模原市南区上鶴間本町4丁目52-6')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(5)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. トープロ表面処理研究所 -->
+  <div class="card" id="stop-6">
+    <div class="card-header" onclick="toggleDetail('d6')">
+      <div class="stop-num pending" id="sn-6">6</div>
+      <div class="card-body">
+        <div class="card-name">トープロ表面処理研究所</div>
+        <div class="card-addr">相模原市南区上鶴間本町4丁目52−14</div>
+        <div class="badges">
+          <span class="badge badge-warn">入口右ベンチ</span>
+          <span class="badge badge-red">回収あり</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d6">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0427012122" style="color:#007AFF;text-decoration:none;font-weight:500">042-701-2122</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">入口入って右のベンチ</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">箸・味噌汁</span></div>
+      <div class="notice-box"><b>納品時に回収もあり。</b>入口ドアの脇に回収物が置いてある。</div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県相模原市南区上鶴間本町4丁目52-14')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(6)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. 大和外科内科クリニック -->
+  <div class="card" id="stop-7">
+    <div class="card-header" onclick="toggleDetail('d7')">
+      <div class="stop-num pending" id="sn-7">7</div>
+      <div class="card-body">
+        <div class="card-name">大和外科内科クリニック</div>
+        <div class="card-addr">大和市下鶴間704−6 コールつきみ野1F</div>
+        <div class="badges">
+          <span class="badge badge-red">裏口のみ</span>
+          <span class="badge badge-warn">インターフォン要</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d7">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0462741767" style="color:#007AFF;text-decoration:none;font-weight:500">046-274-1767</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">店舗裏口からIF押して納品</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">箸・味噌汁</span></div>
+      <div class="detail-row"><span class="detail-key">容器</span><span class="detail-val">全て発泡に入れて納品</span></div>
+      <div class="notice-box red">⚠ <b>正面入り口からは絶対に入らない。</b><br>必ず店舗裏口からインターフォンを押して納品。</div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市下鶴間704-6')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(7)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. 大和つきみ野作業所 -->
+  <div class="card" id="stop-8">
+    <div class="card-header" onclick="toggleDetail('d8')">
+      <div class="stop-num pending" id="sn-8">8</div>
+      <div class="card-body">
+        <div class="card-name">大和つきみ野作業所</div>
+        <div class="card-addr">大和市中央林間8丁目13−2</div>
+        <div class="badges">
+          <span class="badge badge-warn">入口検品必須</span>
+          <span class="badge badge-gray">寸胴</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d8">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0462772434" style="color:#007AFF;text-decoration:none;font-weight:500">046-277-2434</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">ドア開けて左のテーブル</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">寸胴</span></div>
+      <div class="notice-box"><b>入口で職員に検品してもらってから納品。</b></div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市中央林間8丁目13-2')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(8)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. 大和すずな作業所 -->
+  <div class="card" id="stop-9">
+    <div class="card-header" onclick="toggleDetail('d9')">
+      <div class="stop-num pending" id="sn-9">9</div>
+      <div class="card-body">
+        <div class="card-name">大和すずな作業所</div>
+        <div class="card-addr">大和市下鶴間1738−6</div>
+        <div class="badges">
+          <span class="badge badge-warn">検品必須</span>
+          <span class="badge badge-gray">箸・寸胴・お椀</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d9">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0462710566" style="color:#007AFF;text-decoration:none;font-weight:500">046-271-0566</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">入口</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">箸・寸胴・お椀</span></div>
+      <div class="detail-row"><span class="detail-key">タッパー</span><span class="detail-val">すずな用タッパー使用</span></div>
+      <div class="notice-box"><b>検品後に納品。</b></div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市下鶴間1738-6')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(9)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. サンコー食品 -->
+  <div class="card" id="stop-10">
+    <div class="card-header" onclick="toggleDetail('d10')">
+      <div class="stop-num pending" id="sn-10">10</div>
+      <div class="card-body">
+        <div class="card-name">サンコー食品（株）</div>
+        <div class="card-addr">大和市下鶴間2774−13</div>
+        <div class="badges">
+          <span class="badge badge-info">発泡納品</span>
+          <span class="badge badge-gray">味噌汁</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d10">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0462781227" style="color:#007AFF;text-decoration:none;font-weight:500">046-278-1227</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">ドア入って左側の休憩所に発泡で</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">味噌汁</span></div>
+      <div class="notice-box"><b>金曜日は回収なし。</b></div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市下鶴間2774-13')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(10)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. 大和みつば作業所 -->
+  <div class="card" id="stop-11">
+    <div class="card-header" onclick="toggleDetail('d11')">
+      <div class="stop-num pending" id="sn-11">11</div>
+      <div class="card-body">
+        <div class="card-name">大和みつば作業所</div>
+        <div class="card-addr">大和市深見西7丁目4−10</div>
+        <div class="badges">
+          <span class="badge badge-warn">裏口・納品書要</span>
+          <span class="badge badge-gray">寸胴・お椀</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d11">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0462648677" style="color:#007AFF;text-decoration:none;font-weight:500">046-264-8677</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">裏口入って右のテーブル</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">寸胴・お椀（みつば用）</span></div>
+      <div class="notice-box"><b>納品書を書いてお弁当と一緒に納品。</b></div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市深見西7丁目4-10')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(11)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 12. ワークセンターやまと -->
+  <div class="card" id="stop-12">
+    <div class="card-header" onclick="toggleDetail('d12')">
+      <div class="stop-num pending" id="sn-12">12</div>
+      <div class="card-body">
+        <div class="card-name">ワークセンターやまと</div>
+        <div class="card-addr">大和市南林間1丁目1−3</div>
+        <div class="badges">
+          <span class="badge badge-warn">インターフォン手渡し</span>
+          <span class="badge badge-gray">箸・味噌汁</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d12">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0462781731" style="color:#007AFF;text-decoration:none;font-weight:500">046-278-1731</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">インターフォン押して手渡し</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">箸・味噌汁</span></div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市南林間1丁目1-3')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(12)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13. 大和水道営業所 -->
+  <div class="card" id="stop-13">
+    <div class="card-header" onclick="toggleDetail('d13')">
+      <div class="stop-num pending" id="sn-13">13</div>
+      <div class="card-body">
+        <div class="card-name">大和水道営業所</div>
+        <div class="card-addr">大和市西鶴間3丁目12−18</div>
+        <div class="badges">
+          <span class="badge badge-info">発泡納品</span>
+          <span class="badge badge-red">回収後お金受取</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-detail" id="d13">
+      <div class="detail-row"><span class="detail-key">電話番号</span><span class="detail-val"><a href="tel:0462613257" style="color:#007AFF;text-decoration:none;font-weight:500">046-261-3257</a></span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">入って突き当りの休憩所</span></div>
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">なし</span></div>
+      <div class="detail-row"><span class="detail-key">容器</span><span class="detail-val">全て発泡に入れて納品</span></div>
+      <div class="notice-box red"><b>回収後に事務所でお金を受け取ること！</b></div>
+      <div class="btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市西鶴間3丁目12-18')">🗺 地図</button>
+        <button class="btn btn-done" onclick="markDone(13)">納品完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ルートタブ -->
+<section id="tab-route">
+  <div class="route-section">
+    <div class="route-section-title">📦 納品ルート（相模原エリア）</div>
+    <div id="route-list-1">
+      <div class="route-item"><div class="route-dot-col"><div class="rdot current" id="rd-1"></div><div class="rline"></div></div><div><div class="rtext rcurrent" id="rt-1">① ノイズ研究所（中央区）</div><div class="rsub">2F長机 / 味噌汁・箸・お椀</div></div></div>
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-2"></div><div class="rline"></div></div><div><div class="rtext" id="rt-2">② 井上シート商会（中央区）</div><div class="rsub">2F・声掛け・前日回収</div></div></div>
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-3"></div><div class="rline"></div></div><div><div class="rtext" id="rt-3">③ 王鈴物産（中央区）</div><div class="rsub">ドア左棚・前日回収</div></div></div>
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-4"></div><div class="rline"></div></div><div><div class="rtext" id="rt-4">④ 福山通運（南区）</div><div class="rsub">EV2F・専用品のみ・回収14:20〜</div></div></div>
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-5"></div><div class="rline"></div></div><div><div class="rtext" id="rt-5">⑤ 杏友会（南区）</div><div class="rsub">1F検品→4F食堂・保温機ON</div></div></div>
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-6"></div></div><div><div class="rtext" id="rt-6">⑥ トープロ表面処理研究所（南区）</div><div class="rsub">入口右ベンチ・回収あり</div></div></div>
+    </div>
+  </div>
+
+  <div class="route-section">
+    <div class="route-section-title">📦 納品ルート（大和エリア）</div>
+    <div id="route-list-2">
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-7"></div><div class="rline"></div></div><div><div class="rtext" id="rt-7">⑦ 大和外科内科クリニック（下鶴間）</div><div class="rsub">裏口のみ・発泡・IF必須</div></div></div>
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-8"></div><div class="rline"></div></div><div><div class="rtext" id="rt-8">⑧ 大和つきみ野作業所（中央林間）</div><div class="rsub">入口検品→左テーブル</div></div></div>
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-9"></div><div class="rline"></div></div><div><div class="rtext" id="rt-9">⑨ 大和すずな作業所（下鶴間）</div><div class="rsub">検品必須・すずな用タッパー</div></div></div>
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-10"></div><div class="rline"></div></div><div><div class="rtext" id="rt-10">⑩ サンコー食品（下鶴間）</div><div class="rsub">左休憩所・発泡・金曜回収なし</div></div></div>
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-11"></div><div class="rline"></div></div><div><div class="rtext" id="rt-11">⑪ 大和みつば作業所（深見西）</div><div class="rsub">裏口右テーブル・納品書要</div></div></div>
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-12"></div><div class="rline"></div></div><div><div class="rtext" id="rt-12">⑫ ワークセンターやまと（南林間）</div><div class="rsub">インターフォン手渡し・箸・味噌汁</div></div></div>
+      <div class="route-item"><div class="route-dot-col"><div class="rdot pending" id="rd-13"></div></div><div><div class="rtext" id="rt-13">⑬ 大和水道営業所（西鶴間）</div><div class="rsub">発泡納品・回収後お金受取</div></div></div>
+    </div>
+  </div>
+
+  <div class="route-section">
+    <div class="route-section-title">🔄 回収ルート（12:50〜）</div>
+    <div style="font-size:12px;color:#6C6C70;margin-bottom:8px">※納品とは別ルートで回収</div>
+    <div style="font-size:13px;line-height:2;">
+      ① ワークセンターやまと<br>
+      ② 大和水道営業所 <span style="color:#E53E3E;font-size:11px;font-weight:600">（回収後に事務所でお金もらう）</span><br>
+      ③ 大和みつば作業所<br>
+      ④ 盛和中川工業<br>
+      ⑤ 大和すずな作業所<br>
+      ⑥ 大和つきみ野作業所<br>
+      ⑦ 杏友会<br>
+      ⑧ 福山通運 <span style="color:#E53E3E;font-size:11px;font-weight:600">（14:20頃からお金回収可能）</span><br>
+      ⑨ ノイズ研究所
+    </div>
+  </div>
+</section>
+
+<!-- 回収タブ -->
+<section id="tab-collect">
+  <div style="background:#FFF3CD;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#7D4E00;">
+    ⏰ <b>回収スタート：12:50〜</b><br>福山通運のお金回収は<b>14:20頃から</b>。大和水道営業所は回収後に事務所でお金受け取り。
+  </div>
+
+  <div class="collect-card" id="c1">
+    <div class="collect-header" onclick="toggleCollect('cd1')">
+      <div class="cnum" id="cn-1">①</div>
+      <div class="collect-body">
+        <div class="collect-name">ワークセンターやまと</div>
+        <div class="collect-sub">大和市南林間1丁目1−3 / インターフォン手渡し</div>
+      </div>
+    </div>
+    <div class="collect-detail" id="cd1">
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">箸・味噌汁</span></div>
+      <div class="detail-row"><span class="detail-key">納品方法</span><span class="detail-val">インターフォン押して手渡し</span></div>
+      <div class="collect-btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市南林間1丁目1-3')">🗺 地図</button>
+        <button class="btn-collect" onclick="markCollect(1)">回収完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collect-card" id="c2">
+    <div class="collect-header" onclick="toggleCollect('cd2')">
+      <div class="cnum" id="cn-2">②</div>
+      <div class="collect-body">
+        <div class="collect-name">大和水道営業所</div>
+        <div class="collect-sub">大和市西鶴間3丁目12−18 ⚡ お金受取あり</div>
+      </div>
+    </div>
+    <div class="collect-detail" id="cd2">
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">入って突き当りの休憩所</span></div>
+      <div class="detail-row"><span class="detail-key">容器</span><span class="detail-val">全て発泡で納品</span></div>
+      <div class="notice-box red">回収後に<b>事務所でお金を受け取る</b>こと！</div>
+      <div class="collect-btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市西鶴間3丁目12-18')">🗺 地図</button>
+        <button class="btn-collect" onclick="markCollect(2)">回収完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collect-card" id="c3">
+    <div class="collect-header" onclick="toggleCollect('cd3')">
+      <div class="cnum" id="cn-3">③</div>
+      <div class="collect-body">
+        <div class="collect-name">大和みつば作業所</div>
+        <div class="collect-sub">大和市深見西7丁目4−10 / 裏口右テーブル</div>
+      </div>
+    </div>
+    <div class="collect-detail" id="cd3">
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">寸胴・お椀（みつば用）</span></div>
+      <div class="collect-btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市深見西7丁目4-10')">🗺 地図</button>
+        <button class="btn-collect" onclick="markCollect(3)">回収完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collect-card" id="c4">
+    <div class="collect-header" onclick="toggleCollect('cd4')">
+      <div class="cnum" id="cn-4">④</div>
+      <div class="collect-body">
+        <div class="collect-name">盛和中川工業</div>
+        <div class="collect-sub">大和市林間1丁目15−24−2 / 左ロッカー</div>
+      </div>
+    </div>
+    <div class="collect-detail" id="cd4">
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">箸</span></div>
+      <div class="detail-row"><span class="detail-key">納品場所</span><span class="detail-val">入って左側のロッカーに置く</span></div>
+      <div class="collect-btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市林間1丁目15-24-2')">🗺 地図</button>
+        <button class="btn-collect" onclick="markCollect(4)">回収完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collect-card" id="c5">
+    <div class="collect-header" onclick="toggleCollect('cd5')">
+      <div class="cnum" id="cn-5">⑤</div>
+      <div class="collect-body">
+        <div class="collect-name">大和すずな作業所</div>
+        <div class="collect-sub">大和市下鶴間1738−6 / 入口</div>
+      </div>
+    </div>
+    <div class="collect-detail" id="cd5">
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">箸・寸胴・お椀</span></div>
+      <div class="collect-btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市下鶴間1738-6')">🗺 地図</button>
+        <button class="btn-collect" onclick="markCollect(5)">回収完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collect-card" id="c6">
+    <div class="collect-header" onclick="toggleCollect('cd6')">
+      <div class="cnum" id="cn-6">⑥</div>
+      <div class="collect-body">
+        <div class="collect-name">大和つきみ野作業所</div>
+        <div class="collect-sub">大和市中央林間8丁目13−2</div>
+      </div>
+    </div>
+    <div class="collect-detail" id="cd6">
+      <div class="detail-row"><span class="detail-key">付帯品</span><span class="detail-val">寸胴</span></div>
+      <div class="collect-btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県大和市中央林間8丁目13-2')">🗺 地図</button>
+        <button class="btn-collect" onclick="markCollect(6)">回収完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collect-card" id="c7">
+    <div class="collect-header" onclick="toggleCollect('cd7')">
+      <div class="cnum" id="cn-7">⑦</div>
+      <div class="collect-body">
+        <div class="collect-name">杏友会</div>
+        <div class="collect-sub">相模原市南区上鶴間本町4丁目52−6</div>
+      </div>
+    </div>
+    <div class="collect-detail" id="cd7">
+      <div class="collect-btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県相模原市南区上鶴間本町4丁目52-6')">🗺 地図</button>
+        <button class="btn-collect" onclick="markCollect(7)">回収完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collect-card" id="c8">
+    <div class="collect-header" onclick="toggleCollect('cd8')">
+      <div class="cnum" id="cn-8">⑧</div>
+      <div class="collect-body">
+        <div class="collect-name">福山通運</div>
+        <div class="collect-sub">相模原市南区大野台2丁目32−1 ⚡ 14:20〜</div>
+      </div>
+    </div>
+    <div class="collect-detail" id="cd8">
+      <div class="notice-box red"><b>14:20頃からお金の回収が可能。</b>資材の回収は時間前でもOK。</div>
+      <div class="collect-btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県相模原市南区大野台2丁目32-1')">🗺 地図</button>
+        <button class="btn-collect" onclick="markCollect(8)">回収完了 ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collect-card" id="c9">
+    <div class="collect-header" onclick="toggleCollect('cd9')">
+      <div class="cnum" id="cn-9">⑨</div>
+      <div class="collect-body">
+        <div class="collect-name">ノイズ研究所</div>
+        <div class="collect-sub">相模原市中央区千代田1丁目4−4</div>
+      </div>
+    </div>
+    <div class="collect-detail" id="cd9">
+      <div class="detail-row"><span class="detail-key">タッパー</span><span class="detail-val">ノイズ用タッパー回収</span></div>
+      <div class="collect-btn-row">
+        <button class="btn btn-map" onclick="openMap('神奈川県相模原市中央区千代田1丁目4-4')">🗺 地図</button>
+        <button class="btn-collect" onclick="markCollect(9)">回収完了 ✓</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 注意事項タブ -->
+<section id="tab-notes">
+
+  <div class="note-card">
+    <div class="note-header"><div class="note-icon ni-red">!</div><div class="note-title">タッパー・容器の間違い厳禁</div></div>
+    <div class="note-body"><b>ノイズ研究所用タッパー</b>と<b>すずな用タッパー</b>はそれぞれ専用品。他社分と絶対に混同しないこと。みつば作業所はみつば用お椀を使用。</div>
+  </div>
+
+  <div class="note-card">
+    <div class="note-header"><div class="note-icon ni-red">!</div><div class="note-title">福山通運：専用品のみ使用</div></div>
+    <div class="note-body">通常のお弁当は納品しない。<b>全て福山通運用のものを使う。</b><br>キャリーを必ず使用して納品。</div>
+  </div>
+
+  <div class="note-card">
+    <div class="note-header"><div class="note-icon ni-red">裏口</div><div class="note-title">大和外科内科クリニック</div></div>
+    <div class="note-body"><b>正面入り口から絶対に入らない。</b>必ず店舗裏口からインターフォンを押して納品すること。全て発泡に入れて持参。</div>
+  </div>
+
+  <div class="note-card">
+    <div class="note-header"><div class="note-icon ni-warn">¥</div><div class="note-title">お金の回収タイミング</div></div>
+    <div class="note-body">
+      <b>大和水道営業所</b>：回収後に事務所でお金を受け取る。<br>
+      <b>福山通運</b>：14:20頃にならないとお金が出てこない。資材の回収は時間前でも可能。
+    </div>
+  </div>
+
+  <div class="note-card">
+    <div class="note-header"><div class="note-icon ni-warn">検品</div><div class="note-title">検品・声掛けが必要な施設</div></div>
+    <div class="note-body">
+      <b>杏友会</b>：1階事務所で本日の納品数を声掛けてから4階食堂へ。<br>
+      <b>大和つきみ野作業所</b>：入口で職員に検品してもらってから納品。<br>
+      <b>大和すずな作業所</b>：検品後に納品。<br>
+      <b>井上シート商会</b>：2階に上がって声掛けしてから納品。
+    </div>
+  </div>
+
+  <div class="note-card">
+    <div class="note-header"><div class="note-icon ni-info">回収</div><div class="note-title">前日分回収あり</div></div>
+    <div class="note-body">
+      <b>井上シート商会</b>：納品の際に前日分も回収。<br>
+      <b>王鈴物産</b>：前日分回収あり。<br>
+      <b>トープロ表面処理研究所</b>：入口ドア脇に回収物が置いてある。
+    </div>
+  </div>
+
+  <div class="note-card">
+    <div class="note-header"><div class="note-icon ni-info">☀</div><div class="note-title">その他注意事項</div></div>
+    <div class="note-body">
+      <b>杏友会</b>：ご飯は保温機のスイッチをONにしてからご飯を入れる。テーブルにおかずを置き、空番重はテーブル下へ。<br>
+      <b>大和みつば作業所</b>：納品書を書いてお弁当と一緒に納品。<br>
+      <b>サンコー食品</b>：金曜日は回収なし。<br>
+      <b>回収スタート</b>：12:50〜
+    </div>
+  </div>
+
+</section>
+
+<!-- 納品完了タブ -->
+<section id="tab-done">
+  <div style="background:#D1FAE5;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#065F46;">
+    ✅ 納品完了済みの一覧です
+  </div>
+  <div id="done-list">
+    <div style="text-align:center;color:#8E8E93;font-size:13px;padding:40px 0;">まだ納品完了した件数がありません</div>
+  </div>
+</section>
+
+<!-- 回収完了タブ -->
+<section id="tab-collected">
+  <div style="background:#EDE9FE;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#5B21B6;">
+    ✅ 回収完了済みの一覧です
+  </div>
+  <div id="collected-list">
+    <div style="text-align:center;color:#8E8E93;font-size:13px;padding:40px 0;">まだ回収完了した件数がありません</div>
+  </div>
+</section>
+
+</div><!-- /content -->
+
+<script>
+  // 今日の日付
+  const now = new Date();
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('today-date').textContent =
+    now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日（' + days[now.getDay()] + '）';
+
+  const TOTAL = 13;
+  let doneCount = 0;
+
+  // 各停留所の名前マップ
+  const stopNames = {
+    1: 'ノイズ研究所', 2: '井上シート商会', 3: '王鈴物産',
+    4: '福山通運', 5: '杏友会', 6: 'トープロ表面処理研究所',
+    7: '大和外科内科クリニック', 8: '大和つきみ野作業所',
+    9: '大和すずな作業所', 10: 'サンコー食品', 11: '大和みつば作業所',
+    12: 'ワークセンターやまと', 13: '大和水道営業所'
+  };
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', ['stops','route','collect','notes','done','collected'][i] === name);
+    });
+    document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  function toggleDetail(id) {
+    const d = document.getElementById(id);
+    if (d) d.classList.toggle('open');
+  }
+
+  function toggleCollect(id) {
+    const d = document.getElementById(id);
+    if (d) d.classList.toggle('open');
+  }
+
+  // 各カードの元の位置を記憶
+  const originalPositions = {};
+  document.querySelectorAll('#tab-stops .card').forEach(card => {
+    const id = card.id; // "stop-N"
+    originalPositions[id] = card;
+  });
+
+  // 納品完了タブのアイテムを管理
+  const doneItems = {};
+
+  function markDone(n) {
+    const sn = document.getElementById('sn-' + n);
+    if (!sn) return;
+    const card = document.getElementById('stop-' + n);
+    const stopsSection = document.getElementById('tab-stops');
+    const doneList = document.getElementById('done-list');
+
+    if (sn.classList.contains('done')) {
+      // ===== 取り消し処理 =====
+      sn.className = 'stop-num pending';
+      sn.textContent = n;
+      card.style.opacity = '1';
+
+      // バッジを元に戻す（完了→元のバッジに戻せないため「未完了」表示）
+      card.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-info'; b.textContent = '未完了'; });
+
+      // 元の位置に戻す（自分より小さい番号の最後のカードの後に挿入）
+      let inserted = false;
+      const allCards = stopsSection.querySelectorAll('.card');
+      for (let i = 0; i < allCards.length; i++) {
+        const otherId = parseInt(allCards[i].id.replace('stop-', ''));
+        if (otherId > n) {
+          stopsSection.insertBefore(card, allCards[i]);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) {
+        // stat-gridの直後に追加（一番後ろだが完了済みより前）
+        const firstDone = [...stopsSection.querySelectorAll('.card')].find(c => {
+          const cSn = c.querySelector('.stop-num');
+          return cSn && cSn.classList.contains('done') && c !== card;
+        });
+        if (firstDone) stopsSection.insertBefore(card, firstDone);
+        else stopsSection.appendChild(card);
+      }
+
+      // 納品完了タブから削除
+      if (doneItems[n]) { doneItems[n].remove(); delete doneItems[n]; }
+      if (doneList.children.length === 0) {
+        doneList.innerHTML = '<div style="text-align:center;color:#8E8E93;font-size:13px;padding:40px 0;">まだ納品完了した件数がありません</div>';
+      }
+
+      // ボタンを「納品完了 ✓」に戻す
+      const btnUndo = card.querySelector('.btn-done');
+      if (btnUndo) btnUndo.textContent = '納品完了 ✓';
+
+      // ルート戻す
+      const rd = document.getElementById('rd-' + n);
+      if (rd) rd.className = 'rdot pending';
+      const rt = document.getElementById('rt-' + n);
+      if (rt) { rt.style.color = ''; }
+
+      doneCount--;
+    } else {
+      // ===== 完了処理 =====
+      sn.className = 'stop-num done';
+      sn.textContent = '✓';
+      card.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-done'; b.textContent = '完了'; });
+      const detail = card.querySelector('.card-detail');
+      if (detail) detail.classList.remove('open');
+
+      // ボタンのテキストを変更
+      const btn = card.querySelector('.btn-done');
+      if (btn) btn.textContent = '取り消す ↩';
+
+      card.style.opacity = '0.5';
+      stopsSection.appendChild(card);
+
+      const rd = document.getElementById('rd-' + n);
+      if (rd) rd.className = 'rdot done';
+      const rt = document.getElementById('rt-' + n);
+      if (rt) { rt.classList.remove('rcurrent'); rt.style.color = '#8E8E93'; }
+
+      // 納品完了タブに追加
+      const empty = doneList.querySelector('div[style*="まだ"]');
+      if (empty) empty.remove();
+      const now2 = new Date();
+      const hhmm = now2.getHours().toString().padStart(2,'0') + ':' + now2.getMinutes().toString().padStart(2,'0');
+      const item = document.createElement('div');
+      item.style.cssText = 'background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;';
+      item.innerHTML = `
+        <div style="width:28px;height:28px;border-radius:50%;background:#D1FAE5;color:#065F46;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${n}</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;">${stopNames[n]}</div>
+          <div style="font-size:11px;color:#6C6C70;margin-top:2px;">完了時刻: ${hhmm}</div>
+        </div>
+        <div style="font-size:18px;">✅</div>
+      `;
+      doneList.appendChild(item);
+      doneItems[n] = item;
+
+      doneCount++;
+    }
+
+    document.getElementById('remaining').textContent = TOTAL - doneCount;
+    document.getElementById('prog-text').textContent = doneCount + ' / ' + TOTAL + ' 件完了';
+    document.getElementById('prog-fill').style.width = Math.round(doneCount / TOTAL * 100) + '%';
+  }
+
+  const collectNames = {
+    1: 'ワークセンターやまと', 2: '大和水道営業所', 3: '大和みつば作業所',
+    4: '盛和中川工業', 5: '大和すずな作業所', 6: '大和つきみ野作業所',
+    7: '杏友会', 8: '福山通運', 9: 'ノイズ研究所'
+  };
+  const collectedItems = {};
+
+  function markCollect(n) {
+    const cn = document.getElementById('cn-' + n);
+    const card = document.getElementById('c' + n);
+    const btn = document.querySelector('#c' + n + ' .btn-collect');
+    const collectSection = document.getElementById('tab-collect');
+    const collectedList = document.getElementById('collected-list');
+
+    if (cn && cn.classList.contains('done')) {
+      // ===== 取り消し処理 =====
+      cn.className = 'cnum';
+      cn.textContent = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨'][n-1];
+      card.style.opacity = '1';
+      if (btn) { btn.className = 'btn-collect'; btn.textContent = '回収完了 ✓'; btn.disabled = false; }
+
+      // 元の位置に戻す
+      let inserted = false;
+      const allCards = collectSection.querySelectorAll('.collect-card');
+      for (let i = 0; i < allCards.length; i++) {
+        const otherId = parseInt(allCards[i].id.replace('c', ''));
+        if (otherId > n) {
+          collectSection.insertBefore(card, allCards[i]);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) {
+        const firstDone = [...collectSection.querySelectorAll('.collect-card')].find(c => {
+          const cCn = c.querySelector('.cnum');
+          return cCn && cCn.classList.contains('done') && c !== card;
+        });
+        if (firstDone) collectSection.insertBefore(card, firstDone);
+        else collectSection.appendChild(card);
+      }
+
+      // 回収完了タブから削除
+      if (collectedItems[n]) { collectedItems[n].remove(); delete collectedItems[n]; }
+      if (collectedList.children.length === 0) {
+        collectedList.innerHTML = '<div style="text-align:center;color:#8E8E93;font-size:13px;padding:40px 0;">まだ回収完了した件数がありません</div>';
+      }
+    } else {
+      // ===== 完了処理 =====
+      if (cn) { cn.className = 'cnum done'; cn.textContent = '✓'; }
+      if (btn) { btn.className = 'btn-collect done-btn'; btn.textContent = '取り消す ↩'; btn.disabled = false; }
+      const cd = document.getElementById('cd' + n);
+      if (cd) cd.classList.remove('open');
+
+      card.style.opacity = '0.5';
+      collectSection.appendChild(card);
+
+      // 回収完了タブに追加
+      const empty = collectedList.querySelector('div[style*="まだ"]');
+      if (empty) empty.remove();
+      const now3 = new Date();
+      const hhmm = now3.getHours().toString().padStart(2,'0') + ':' + now3.getMinutes().toString().padStart(2,'0');
+      const item = document.createElement('div');
+      item.style.cssText = 'background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;';
+      item.innerHTML = `
+        <div style="width:28px;height:28px;border-radius:50%;background:#EDE9FE;color:#5B21B6;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${n}</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;">${collectNames[n]}</div>
+          <div style="font-size:11px;color:#6C6C70;margin-top:2px;">完了時刻: ${hhmm}</div>
+        </div>
+        <div style="font-size:18px;">✅</div>
+      `;
+      collectedList.appendChild(item);
+      collectedItems[n] = item;
+    }
+  }
+
+  function openMap(addr) {
+    window.open('https://maps.google.com/?q=' + encodeURIComponent(addr), '_blank');
+  }
+</script>
+</body>
+</html>
